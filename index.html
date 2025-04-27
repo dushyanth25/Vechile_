@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vehicle Noise Level Checker</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+            transition: background-color 0.5s;
+            background-color: white;
+        }
+        .vehicle-selection {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 20px 0;
+        }
+        .vehicle-option {
+            padding: 20px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            background-color: white;
+        }
+        .vehicle-option.selected {
+            border-color: #4CAF50;
+            background-color: #f0fff0;
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(76, 175, 80, 0.5);
+        }
+        .vehicle-option i {
+            font-size: 48px;
+            margin-bottom: 10px;
+            display: block;
+        }
+        .meter-container {
+            margin: 30px 0;
+            position: relative;
+            height: 300px;
+        }
+        #meter {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to top, #00ff00, #ffff00, #ff0000);
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+        #indicator {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 0%;
+            background-color: rgba(0, 0, 0, 0.3);
+            transition: height 0.3s;
+        }
+        #level {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            font-weight: bold;
+            background-color: rgba(255, 255, 255, 0.7);
+            padding: 10px 20px;
+            border-radius: 5px;
+        }
+        .limits {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+        .limit {
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        #result {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 5px;
+            font-size: 18px;
+            font-weight: bold;
+            background-color: #f8f8f8;
+            min-height: 60px;
+            transition: all 0.3s;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 10px 2px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        button#startBtn.measuring {
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { background-color: #4CAF50; }
+            50% { background-color: #2E8B57; }
+            100% { background-color: #4CAF50; }
+        }
+        .alert {
+            animation: blink 0.5s infinite;
+        }
+        @keyframes blink {
+            0% { background-color: #ff0000; }
+            50% { background-color: #ffcccc; }
+            100% { background-color: #ff0000; }
+        }
+        .hidden {
+            display: none;
+        }
+        .sound-wave {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 10px;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .sound-wave.active {
+            animation: soundWave 0.8s ease-out;
+        }
+        @keyframes soundWave {
+            0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7); opacity: 1; }
+            100% { box-shadow: 0 0 0 20px rgba(76, 175, 80, 0); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <h1>Vehicle Noise Level Checker</h1>
+    <p>Select your vehicle type and measure its sound level</p>
+    
+    <div class="vehicle-selection">
+        <div class="vehicle-option" data-type="car" data-limit="75" data-sound="car">
+            <i class="fas fa-car"></i>
+            <span>Car</span>
+            <div class="sound-wave"></div>
+        </div>
+        <div class="vehicle-option" data-type="bike" data-limit="85" data-sound="bike">
+            <i class="fas fa-motorcycle"></i>
+            <span>Motorcycle</span>
+            <div class="sound-wave"></div>
+        </div>
+        <div class="vehicle-option" data-type="truck" data-limit="90" data-sound="truck">
+            <i class="fas fa-truck"></i>
+            <span>Truck</span>
+            <div class="sound-wave"></div>
+        </div>
+    </div>
+    
+    <div id="meter-section" class="hidden">
+        <div class="meter-container">
+            <div id="meter">
+                <div id="indicator"></div>
+                <div id="level">-- dB</div>
+            </div>
+            <div class="limits">
+                <div class="limit" style="background-color: #00ff00;">Quiet (0-70 dB)</div>
+                <div class="limit" style="background-color: #ffff00;">Moderate (70-85 dB)</div>
+                <div class="limit" style="background-color: #ff0000;">Loud (85+ dB)</div>
+            </div>
+        </div>
+        
+        <div id="current-limit">
+            Current limit: <span id="limit-value">--</span> dB
+        </div>
+        
+        <div id="result">Press "Start Measurement" to begin</div>
+        
+        <button id="startBtn">Start Measurement</button>
+        <button id="stopBtn" disabled>Stop Measurement</button>
+    </div>
+    
+    <script>
+        const vehicleOptions = document.querySelectorAll('.vehicle-option');
+        const meterSection = document.getElementById('meter-section');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const indicator = document.getElementById('indicator');
+        const levelDisplay = document.getElementById('level');
+        const resultDisplay = document.getElementById('result');
+        const limitValueDisplay = document.getElementById('limit-value');
+        
+        let audioContext;
+        let microphone;
+        let analyser;
+        let javascriptNode;
+        let isMeasuring = false;
+        let currentVehicleType = null;
+        let currentLimit = 85;
+        let isOverLimit = false;
+        let alertInterval;
+        
+        // Create audio context on first user interaction
+        function initAudioContext() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+        
+        // Function to play simple tone
+        function playTone(frequency, duration, type = 'sine') {
+            initAudioContext();
+            
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.type = type;
+            oscillator.frequency.value = frequency;
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            // Smooth fade in/out to avoid clicks
+            gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.1);
+            gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + duration);
+            
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + duration);
+        }
+        
+        // Vehicle sounds using oscillator
+        function playVehicleSound(type) {
+            switch(type) {
+                case 'car':
+                    // Car engine starting sound
+                    playTone(80, 0.5, 'sawtooth');
+                    setTimeout(() => playTone(120, 0.3, 'sawtooth'), 200);
+                    setTimeout(() => playTone(60, 0.4, 'sawtooth'), 500);
+                    break;
+                case 'bike':
+                    // Motorcycle revving sound
+                    playTone(120, 0.2, 'square');
+                    setTimeout(() => playTone(200, 0.3, 'square'), 150);
+                    setTimeout(() => playTone(80, 0.5, 'square'), 450);
+                    break;
+                case 'truck':
+                    // Truck engine sound
+                    playTone(50, 0.6, 'sawtooth');
+                    setTimeout(() => playTone(40, 0.5, 'sawtooth'), 300);
+                    setTimeout(() => playTone(45, 0.4, 'sawtooth'), 600);
+                    break;
+            }
+        }
+        
+        function playStartSound() {
+            // Ascending tone
+            playTone(300, 0.3);
+            setTimeout(() => playTone(400, 0.2), 200);
+            setTimeout(() => playTone(500, 0.1), 350);
+        }
+        
+        function playStopSound() {
+            // Descending tone
+            playTone(500, 0.2);
+            setTimeout(() => playTone(400, 0.2), 150);
+            setTimeout(() => playTone(300, 0.3), 300);
+        }
+        
+        function playAlertSound() {
+            // Pulsing alarm sound
+            playTone(800, 0.2, 'square');
+            setTimeout(() => playTone(600, 0.2, 'square'), 300);
+        }
+        
+        // Vehicle selection with sound effects
+        vehicleOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                vehicleOptions.forEach(opt => opt.classList.remove('selected'));
+                option.classList.add('selected');
+                
+                // Play vehicle sound effect
+                const soundType = option.dataset.sound;
+                playVehicleSound(soundType);
+                
+                // Show sound wave animation
+                const soundWave = option.querySelector('.sound-wave');
+                soundWave.classList.add('active');
+                setTimeout(() => soundWave.classList.remove('active'), 800);
+                
+                currentVehicleType = option.dataset.type;
+                currentLimit = parseInt(option.dataset.limit);
+                limitValueDisplay.textContent = currentLimit;
+                meterSection.classList.remove('hidden');
+                resultDisplay.textContent = `Ready to measure ${currentVehicleType} noise (limit: ${currentLimit} dB)`;
+                resultDisplay.style.backgroundColor = "#f8f8f8";
+            });
+        });
+        
+        startBtn.addEventListener('click', startMeasurement);
+        stopBtn.addEventListener('click', stopMeasurement);
+        
+        async function startMeasurement() {
+            if (!currentVehicleType) {
+                resultDisplay.textContent = "Please select a vehicle type first";
+                resultDisplay.style.backgroundColor = "#ffcccc";
+                return;
+            }
+            
+            try {
+                // Play start sound
+                playStartSound();
+                
+                // Request microphone access
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                
+                // Set up audio context if not already done
+                initAudioContext();
+                
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 256;
+                
+                microphone = audioContext.createMediaStreamSource(stream);
+                microphone.connect(analyser);
+                
+                javascriptNode = audioContext.createScriptProcessor(2048, 1, 1);
+                analyser.connect(javascriptNode);
+                javascriptNode.connect(audioContext.destination);
+                
+                javascriptNode.onaudioprocess = processAudio;
+                
+                isMeasuring = true;
+                startBtn.disabled = true;
+                startBtn.classList.add('measuring');
+                stopBtn.disabled = false;
+                resultDisplay.textContent = `Measuring ${currentVehicleType} noise... Please rev your engine.`;
+                resultDisplay.style.backgroundColor = "#fffacd";
+            } catch (error) {
+                resultDisplay.textContent = "Error: " + error.message;
+                resultDisplay.style.backgroundColor = "#ffcccc";
+            }
+        }
+        
+        function stopMeasurement() {
+            if (isMeasuring) {
+                // Play stop sound
+                playStopSound();
+                
+                if (javascriptNode) {
+                    javascriptNode.disconnect();
+                    javascriptNode.onaudioprocess = null;
+                }
+                if (microphone) {
+                    microphone.disconnect();
+                }
+                if (audioContext && audioContext.state !== 'closed') {
+                    audioContext.close();
+                }
+                
+                isMeasuring = false;
+                startBtn.disabled = false;
+                startBtn.classList.remove('measuring');
+                stopBtn.disabled = true;
+                resultDisplay.textContent = `Measurement stopped. Ready to measure again.`;
+                resultDisplay.style.backgroundColor = "#f8f8f8";
+                
+                // Stop any alert blinking
+                document.body.classList.remove('alert');
+                if (alertInterval) clearInterval(alertInterval);
+            }
+        }
+        
+        function processAudio() {
+            const array = new Uint8Array(analyser.frequencyBinCount);
+            analyser.getByteFrequencyData(array);
+            
+            let values = 0;
+            const length = array.length;
+            
+            // Calculate average volume
+            for (let i = 0; i < length; i++) {
+                values += array[i];
+            }
+            
+            const average = values / length;
+            
+            // Convert to dB (this is a simplified approximation)
+            const dB = Math.round(Math.log(average) * 8 + 30);
+            
+            // Update display
+            updateDisplay(dB);
+        }
+        
+        function updateDisplay(dB) {
+            // Cap the dB at 120 for display purposes
+            const displayDB = Math.min(dB, 120);
+            
+            // Update level text
+            levelDisplay.textContent = displayDB + " dB";
+            
+            // Update indicator height (0-100%)
+            const percentage = Math.min(displayDB, 100);
+            indicator.style.height = (100 - percentage) + "%";
+            
+            // Check against limit
+            if (displayDB > currentLimit) {
+                if (!isOverLimit) {
+                    // Just crossed the limit - start alert
+                    isOverLimit = true;
+                    document.body.classList.add('alert');
+                    resultDisplay.textContent = `WARNING! Noise level (${displayDB} dB) exceeds ${currentVehicleType} limit of ${currentLimit} dB`;
+                    resultDisplay.style.backgroundColor = "#ff0000";
+                    resultDisplay.style.color = "white";
+                    
+                    // Play alert sound in a loop
+                    playAlertSound();
+                    alertInterval = setInterval(playAlertSound, 500);
+                }
+            } else {
+                if (isOverLimit) {
+                    // Just came back under limit - stop alert
+                    isOverLimit = false;
+                    document.body.classList.remove('alert');
+                    resultDisplay.textContent = `Noise level (${displayDB} dB) is now under ${currentVehicleType} limit of ${currentLimit} dB`;
+                    resultDisplay.style.backgroundColor = "#ddffdd";
+                    resultDisplay.style.color = "black";
+                    
+                    // Stop alert sound
+                    if (alertInterval) clearInterval(alertInterval);
+                } else {
+                    // Normal operation under limit
+                    resultDisplay.textContent = `Noise level (${displayDB} dB) is under ${currentVehicleType} limit of ${currentLimit} dB`;
+                    resultDisplay.style.backgroundColor = "#ddffdd";
+                }
+            }
+        }
+        
+        // Handle page exit
+        window.addEventListener('beforeunload', stopMeasurement);
+    </script>
+</body>
+</html>
