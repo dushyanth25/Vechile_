@@ -7,13 +7,21 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Arial', sans-serif;
             max-width: 800px;
             margin: 0 auto;
             padding: 20px;
             text-align: center;
             transition: background-color 0.5s;
-            background-color: white;
+            background-color: #0d0d0d;
+            color: #e0e0e0;
+        }
+        h1 {
+            color: #00ff88;
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+        }
+        p {
+            color: #aaaaaa;
         }
         .vehicle-selection {
             display: flex;
@@ -23,22 +31,24 @@
         }
         .vehicle-option {
             padding: 20px;
-            border: 2px solid #ddd;
+            border: 2px solid #333;
             border-radius: 10px;
             cursor: pointer;
             transition: all 0.3s;
-            background-color: white;
+            background-color: #1e1e1e;
+            color: #e0e0e0;
         }
         .vehicle-option.selected {
-            border-color: #4CAF50;
-            background-color: #f0fff0;
+            border-color: #00ff88;
+            background-color: #1e2e28;
             transform: scale(1.05);
-            box-shadow: 0 0 15px rgba(76, 175, 80, 0.5);
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.5);
         }
         .vehicle-option i {
             font-size: 48px;
             margin-bottom: 10px;
             display: block;
+            color: #00ff88;
         }
         .meter-container {
             margin: 30px 0;
@@ -52,6 +62,7 @@
             border-radius: 10px;
             position: relative;
             overflow: hidden;
+            border: 2px solid #333;
         }
         #indicator {
             position: absolute;
@@ -69,9 +80,10 @@
             transform: translate(-50%, -50%);
             font-size: 24px;
             font-weight: bold;
-            background-color: rgba(255, 255, 255, 0.7);
+            background-color: rgba(30, 30, 30, 0.8);
             padding: 10px 20px;
             border-radius: 5px;
+            color: white;
         }
         .limits {
             display: flex;
@@ -82,6 +94,7 @@
             padding: 5px 10px;
             border-radius: 5px;
             font-weight: bold;
+            color: #121212;
         }
         #result {
             margin: 20px 0;
@@ -89,12 +102,14 @@
             border-radius: 5px;
             font-size: 18px;
             font-weight: bold;
-            background-color: #f8f8f8;
+            background-color: #1e1e1e;
             min-height: 60px;
             transition: all 0.3s;
+            color: #e0e0e0;
+            border: 1px solid #333;
         }
         button {
-            background-color: #4CAF50;
+            background-color: #00aa55;
             color: white;
             border: none;
             padding: 10px 20px;
@@ -107,24 +122,29 @@
             border-radius: 5px;
             transition: all 0.3s;
         }
+        button:hover {
+            background-color: #00ff88;
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+        }
         button:disabled {
-            background-color: #cccccc;
+            background-color: #333333;
             cursor: not-allowed;
+            box-shadow: none;
         }
         button#startBtn.measuring {
             animation: pulse 1.5s infinite;
         }
         @keyframes pulse {
-            0% { background-color: #4CAF50; }
-            50% { background-color: #2E8B57; }
-            100% { background-color: #4CAF50; }
+            0% { background-color: #00aa55; }
+            50% { background-color: #00ff88; }
+            100% { background-color: #00aa55; }
         }
         .alert {
             animation: blink 0.5s infinite;
         }
         @keyframes blink {
             0% { background-color: #ff0000; }
-            50% { background-color: #ffcccc; }
+            50% { background-color: #440000; }
             100% { background-color: #ff0000; }
         }
         .hidden {
@@ -144,8 +164,15 @@
             animation: soundWave 0.8s ease-out;
         }
         @keyframes soundWave {
-            0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7); opacity: 1; }
-            100% { box-shadow: 0 0 0 20px rgba(76, 175, 80, 0); opacity: 0; }
+            0% { box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.7); opacity: 1; }
+            100% { box-shadow: 0 0 0 20px rgba(0, 255, 136, 0); opacity: 0; }
+        }
+        #current-limit {
+            margin: 15px 0;
+            padding: 10px;
+            background-color: #1e1e1e;
+            border-radius: 5px;
+            border: 1px solid #333;
         }
     </style>
 </head>
@@ -267,23 +294,23 @@
         }
         
         function playStartSound() {
-            // Ascending tone
-            playTone(300, 0.3);
-            setTimeout(() => playTone(400, 0.2), 200);
-            setTimeout(() => playTone(500, 0.1), 350);
+            // Game-style start sound
+            playTone(784, 0.1, 'square');
+            setTimeout(() => playTone(1046, 0.1, 'square'), 100);
+            setTimeout(() => playTone(1318, 0.2, 'square'), 200);
         }
         
         function playStopSound() {
-            // Descending tone
-            playTone(500, 0.2);
-            setTimeout(() => playTone(400, 0.2), 150);
-            setTimeout(() => playTone(300, 0.3), 300);
+            // Game-style stop sound
+            playTone(1318, 0.1, 'square');
+            setTimeout(() => playTone(1046, 0.1, 'square'), 100);
+            setTimeout(() => playTone(784, 0.2, 'square'), 200);
         }
         
         function playAlertSound() {
-            // Pulsing alarm sound
-            playTone(800, 0.2, 'square');
-            setTimeout(() => playTone(600, 0.2, 'square'), 300);
+            // Game-style alert sound
+            playTone(880, 0.1, 'square');
+            setTimeout(() => playTone(440, 0.1, 'square'), 100);
         }
         
         // Vehicle selection with sound effects
@@ -306,7 +333,7 @@
                 limitValueDisplay.textContent = currentLimit;
                 meterSection.classList.remove('hidden');
                 resultDisplay.textContent = `Ready to measure ${currentVehicleType} noise (limit: ${currentLimit} dB)`;
-                resultDisplay.style.backgroundColor = "#f8f8f8";
+                resultDisplay.style.backgroundColor = "#1e2e28";
             });
         });
         
@@ -316,7 +343,7 @@
         async function startMeasurement() {
             if (!currentVehicleType) {
                 resultDisplay.textContent = "Please select a vehicle type first";
-                resultDisplay.style.backgroundColor = "#ffcccc";
+                resultDisplay.style.backgroundColor = "#442222";
                 return;
             }
             
@@ -347,10 +374,10 @@
                 startBtn.classList.add('measuring');
                 stopBtn.disabled = false;
                 resultDisplay.textContent = `Measuring ${currentVehicleType} noise... Please rev your engine.`;
-                resultDisplay.style.backgroundColor = "#fffacd";
+                resultDisplay.style.backgroundColor = "#2e2e28";
             } catch (error) {
                 resultDisplay.textContent = "Error: " + error.message;
-                resultDisplay.style.backgroundColor = "#ffcccc";
+                resultDisplay.style.backgroundColor = "#442222";
             }
         }
         
@@ -375,7 +402,7 @@
                 startBtn.classList.remove('measuring');
                 stopBtn.disabled = true;
                 resultDisplay.textContent = `Measurement stopped. Ready to measure again.`;
-                resultDisplay.style.backgroundColor = "#f8f8f8";
+                resultDisplay.style.backgroundColor = "#1e2e28";
                 
                 // Stop any alert blinking
                 document.body.classList.remove('alert');
@@ -435,15 +462,15 @@
                     isOverLimit = false;
                     document.body.classList.remove('alert');
                     resultDisplay.textContent = `Noise level (${displayDB} dB) is now under ${currentVehicleType} limit of ${currentLimit} dB`;
-                    resultDisplay.style.backgroundColor = "#ddffdd";
-                    resultDisplay.style.color = "black";
+                    resultDisplay.style.backgroundColor = "#1e2e28";
+                    resultDisplay.style.color = "#e0e0e0";
                     
                     // Stop alert sound
                     if (alertInterval) clearInterval(alertInterval);
                 } else {
                     // Normal operation under limit
                     resultDisplay.textContent = `Noise level (${displayDB} dB) is under ${currentVehicleType} limit of ${currentLimit} dB`;
-                    resultDisplay.style.backgroundColor = "#ddffdd";
+                    resultDisplay.style.backgroundColor = "#1e2e28";
                 }
             }
         }
